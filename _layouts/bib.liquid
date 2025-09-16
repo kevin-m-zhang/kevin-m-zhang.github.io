@@ -1,6 +1,10 @@
 ---
 ---
-<div class="row">
+<div
+  class="row"
+  data-pubtype="{{ entry.pubtype | default: 'publication' }}"
+  data-year="{{ entry.year }}"
+>
   {% if site.enable_publication_thumbnails %}
     <div class="col col-sm-2 abbr">
       {%- if entry.abbr -%}
@@ -177,7 +181,7 @@
       {% include hook/bib.liquid %}
     {% endif %}
     {% assign entrytype_text = entrytype | strip_html | strip %}
-    {% capture periodical %}{{ entrytype }}{% if entrytype_text != "" and entryyear != "" %}, {% endif %}{{ entrymonth }}{{ entryyear }}{% endcapture %}
+    {% capture periodical %}{{ entrytype }}{{ entrymonth }}{{ entryyear }}{% endcapture %}
     <div class="periodical">
       {{ periodical | strip }}
     </div>
@@ -251,7 +255,7 @@
         {% endif %}
       {% endif %}
       {% if entry.website %}
-        <a href="{{ entry.website }}" class="btn btn-sm z-depth-0" role="button">Website</a>
+        <a href="{{ entry.website }}" class="btn btn-sm z-depth-0" role="button">website</a>
       {% endif %}
     </div>
     {% if site.enable_publication_badges %}
@@ -370,3 +374,223 @@
     {% endif %}
   </div>
 </div>
+
+{% if page.url contains '/publications' or page.permalink contains '/publications' or page.title == 'Publications' %}
+<script>
+(function () {
+  function applyFilter(val) {
+    // Show/hide rows by pubtype
+    document.querySelectorAll('[data-pubtype]').forEach(function (row) {
+      var type = row.getAttribute('data-pubtype') || 'publication';
+      row.style.display = (type === val) ? '' : 'none';
+      row.hidden = !(type === val); // also toggle hidden for a11y/layout helpers
+    });
+
+    // Toggle active styling + ARIA if toolbar exists
+    var tb = document.getElementById('pubtype-filter');
+    if (tb) {
+      tb.querySelectorAll('[data-filter]').forEach(function (pill) {
+        var isActive = pill.getAttribute('data-filter') === val;
+        pill.classList.toggle('active', isActive);
+        pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    updateYearSections();
+  }
+
+  function updateYearSections() {
+    // 1) Collect visible years from currently shown rows
+    var visibleYears = new Set();
+    document.querySelectorAll('[data-pubtype]').forEach(function (row) {
+      if (row.style.display !== 'none') {
+        var y = (row.getAttribute('data-year') || '').trim();
+        if (/^\d{4}$/.test(y)) visibleYears.add(y);
+      }
+    });
+
+    // 2) Find year headers robustly:
+    //   - <h2 class="year">2025</h2>
+    //   - Any heading whose text = YYYY
+    //   - Any heading with id=YYYY (some al-folio variants)
+    var allHeadings = Array.prototype.slice.call(
+      document.querySelectorAll('h1,h2,h3,h4,h5,h6,.year')
+    );
+
+    var yearHeaders = allHeadings
+      .filter(function (h) {
+        var txt = (h.textContent || '').trim();
+        var id  = (h.id || '').trim();
+        var byTxt = /^\d{4}$/.test(txt);
+        var byId  = /^\d{4}$/.test(id);
+        var byClass = h.tagName.toLowerCase().startsWith('h') && h.classList.contains('year');
+        var isYear = byTxt || byId || byClass;
+        if (isYear) {
+          // Normalize the year value and stash it for quick access
+          h.dataset._year = byTxt ? txt : (byId ? id : txt);
+        }
+        return isYear;
+      })
+      // Keep DOM order
+      .sort(function (a, b) {
+        if (a === b) return 0;
+        return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+      });
+
+    // 3) Hide/show each year section block based on visibility of entries
+    yearHeaders.forEach(function (header, i) {
+      var year = header.dataset._year;
+      var shouldShow = visibleYears.has(year);
+      var nextHeader = yearHeaders[i + 1] || null;
+      toggleHeaderBlock(header, nextHeader, shouldShow);
+    });
+
+    // Helpers
+
+    function toggleHeaderBlock(header, nextHeader, show) {
+      // Header itself
+      setDisp(header, show);
+
+      // If there is an immediate divider after the header, include it
+      // Common patterns in al-folio: .divider, hr, .hr, .hr-light etc.
+      var firstSibling = header.nextElementSibling;
+      if (firstSibling && (firstSibling.matches('.divider, hr, .hr, .hr-light, .year-divider'))) {
+        setDisp(firstSibling, show);
+      }
+
+      // Toggle everything up to (but not including) the next year header
+      var el = (firstSibling && firstSibling !== header) ? firstSibling.nextElementSibling : header.nextElementSibling;
+      while (el && el !== nextHeader) {
+        // Skip style/script nodes
+        if (!el.matches('script, style')) setDisp(el, show);
+        el = el.nextElementSibling;
+      }
+    }
+
+    function setDisp(el, show) {
+      if (!el) return;
+      // Remember original display so we can restore it cleanly
+      if (!el.dataset.origDisplay) {
+        // getComputedStyle can return 'block', 'list-item', etc. Preserve it.
+        el.dataset.origDisplay = getComputedStyle(el).display || '';
+      }
+      if (show) {
+        el.style.display = el.dataset.origDisplay === 'none' ? '' : el.dataset.origDisplay;
+        el.hidden = false;
+      } else {
+        el.style.display = 'none';
+        el.hidden = true;
+      }
+    }
+  }
+
+  function init() {
+    // Guard: only run on publications-like pages
+    var hasRows = !!document.querySelector('[data-pubtype]');
+    var pathLooksLikePubs = /(^|\/)(publications)(\/|$)/i.test(location.pathname) ||
+                            (document.title || '').toLowerCase().includes('publications');
+    if (!hasRows || !pathLooksLikePubs) return;
+
+    // If toolbar exists already, just apply the filter
+    if (document.getElementById('pubtype-filter')) {
+      applyFilter('publication');
+      return;
+    }
+
+    // Insert toolbar under the page title
+    var titleEl = document.querySelector('.page-title') ||
+                  document.querySelector('.post-title') ||
+                  document.querySelector('h1');
+
+    var toolbar = document.createElement('div');
+    toolbar.id = 'pubtype-filter';
+    toolbar.className = 'pubtype-toolbar';
+    toolbar.setAttribute('role', 'group');
+    toolbar.innerHTML = [
+      '<span role="button" tabindex="0" class="badge rounded pubtype-pill active" data-filter="publication" aria-pressed="true" aria-label="filter publications">publications</span>',
+      '<span role="button" tabindex="0" class="badge rounded pubtype-pill" data-filter="abstract" aria-pressed="false" aria-label="filter abstracts">abstracts</span>'
+    ].join('');
+
+    if (titleEl) titleEl.insertAdjacentElement('afterend', toolbar);
+
+    function onActivate(target) {
+      var btn = target.closest('[data-filter]');
+      if (!btn) return;
+      applyFilter(btn.getAttribute('data-filter'));
+    }
+
+    toolbar.addEventListener('click', function (e) { onActivate(e.target); });
+    toolbar.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onActivate(e.target);
+      }
+    });
+
+    // ALWAYS force "publications" on initial load (clears any prior state)
+    applyFilter('publication');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+</script>
+
+<style>
+  /* Toolbar layout */
+  .pubtype-toolbar {
+    margin-top: 0.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Unselected: outline with theme-colored text; slightly larger via padding; thicker outline */
+  .pubtype-toolbar .pubtype-pill {
+    cursor: pointer;
+    user-select: none;
+    padding: 0.45em 0.85em; /* a touch larger without changing font-size */
+    font-size: 0.75em;      /* unchanged */
+    line-height: 1;
+    background: transparent;
+    color: var(--global-theme-color);
+    border: 2px solid var(--global-theme-color); /* thicker outline */
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+
+  /* Ensure unselected pill text is THEME-COLORED (not white) even if theme .badge sets white */
+  .pubtype-toolbar .pubtype-pill:not(.active) {
+    color: var(--global-theme-color) !important;
+  }
+
+  /* Selected: filled with theme; white text */
+  .pubtype-toolbar .pubtype-pill.active {
+    background: var(--global-theme-color);
+    color: #fff;
+    border-color: var(--global-theme-color);
+    font-weight: 700;
+  }
+
+  /* Optional hover cue */
+  .pubtype-toolbar .pubtype-pill:hover {
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.06) inset;
+  }
+
+  /* Keyboard focus */
+  .pubtype-toolbar .pubtype-pill:focus-visible {
+    outline: 2px solid var(--global-theme-color);
+    outline-offset: 2px;
+  }
+
+  /* Stop uppercasing the action buttons in the publications list */
+  .links .btn { 
+    text-transform: none !important; 
+    letter-spacing: normal !important;
+  }
+
+</style>
+{% endif %}
