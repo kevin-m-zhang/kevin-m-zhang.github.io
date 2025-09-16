@@ -62,6 +62,12 @@ layout: default
         <a href="{{ '/publications/' | relative_url }}" style="color: inherit">selected publications</a>
       </h2>
       {% include selected_papers.liquid %}
+      <style>
+        .links .btn { 
+          text-transform: none !important; 
+          letter-spacing: normal !important;
+        }
+      </style>
     {% endif %}
 
         <!-- Social -->
