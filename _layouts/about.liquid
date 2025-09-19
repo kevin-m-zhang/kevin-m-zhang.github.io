@@ -84,4 +84,15 @@ layout: default
       {% include newsletter.liquid center=true %}
     {% endif %}
   </article>
+
+    <style>
+    /* Mobile: let announcements expand instead of scrolling */
+    @media (max-width: 576px) {
+      /* Robustly target the inline max-height the include sets */
+      .post [style*="max-height: 60vw"] {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+    }
+  </style>
 </div>
