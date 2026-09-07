@@ -24,12 +24,12 @@ announcements:
 #   limit: 3 # leave blank to include all the blog posts
 ---
 
-Hello! I am a BS/MS student at the [University of Washington](https://www.cs.washington.edu/) studying computer science and biochemistry. I currently work on medical multimodal reasoning, large-scale data curation, and benchmarking with [Wisdom Ikezogwo](https://wisdomikezogwo.github.io/) under [Prof. Linda Shapiro](https://homes.cs.washington.edu/~shapiro/) and [Prof. Ranjay Krishna](https://www.ranjaykrishna.com/index.html). I also work on applications of medical AI under [Dr. Jay Pal](https://www.uwmedicine.org/bios/jay-pal).
+Hello! I am a BS/MS student at the [University of Washington](https://www.cs.washington.edu/) studying computer science. I am a student researcher at [AI2](https://allenai.org/) on the Open Ecosystem team. I currently work on medical multimodal reasoning, large-scale data curation, and benchmarking with [Wisdom Ikezogwo](https://wisdomikezogwo.github.io/) under [James Park](https://jaesungpark96.github.io/), [Prof. Ranjay Krishna](https://www.ranjaykrishna.com/index.html), and [Prof. Linda Shapiro](https://homes.cs.washington.edu/~shapiro/). I also work on applications of medical AI under [Dr. Jay Pal](https://www.uwmedicine.org/bios/jay-pal).
 
 My research interests include:
 
 - Large-scale multimodal dataset curation
-- Multimodal reasoning
+- multimodal grounded reasoning
 
 I am involved in an [international medical effort in Nepal](https://www.canva.com/design/DAGiZkB18Rs/Yp3LJKzAs2ai31laZnszug/view?utm_content=DAGiZkB18Rs&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h8157e42ce6) led by Dr. Jay Pal under [UW's Department of Global Health](https://globalhealth.uw.edu/). I also volunteer in [community health at the Asia Pacific Cultural Center](https://www.asiapacificculturalcenter.org/post/recap-third-journey-to-wellness-health-screening-fair).
 
